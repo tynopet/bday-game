@@ -205,6 +205,39 @@ function getSound(id: SoundId): Howl {
 
 (Object.keys(soundDefinitions) as SoundId[]).forEach((id) => getSound(id));
 
+function preloadSound(id: SoundId): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const sound = getSound(id);
+
+    if (sound.state() === "loaded") {
+      resolve();
+      return;
+    }
+
+    const handleLoad = () => {
+      sound.off("loaderror", handleLoadError);
+      resolve();
+    };
+    const handleLoadError = (_soundId: number, error: unknown) => {
+      sound.off("load", handleLoad);
+      reject(error);
+    };
+
+    sound.once("load", handleLoad);
+    sound.once("loaderror", handleLoadError);
+
+    if (sound.state() === "unloaded") {
+      sound.load();
+    }
+  });
+}
+
+export function preloadSounds(): Array<() => Promise<void>> {
+  return (Object.keys(soundDefinitions) as SoundId[]).map(
+    (id) => () => preloadSound(id),
+  );
+}
+
 export async function unlockAudio(): Promise<void> {
   Howler.autoUnlock = true;
 

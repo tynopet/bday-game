@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { DesktopGuard } from "./components/DesktopGuard";
+import { GameLoader } from "./components/GameLoader";
 import { stopAllSounds } from "./audio/audio";
+import { preloadGameAssets } from "./assets/preloadAssets";
 import { ArmeniaGameScreen } from "./games/ArmeniaGameScreen";
 import { JapanGameScreen } from "./games/JapanGameScreen";
 import { PuppyGameScreen } from "./games/PuppyGameScreen";
@@ -18,6 +20,26 @@ const initialGameState: GameState = {
 
 export function App() {
   const [gameState, setGameState] = useState<GameState>(initialGameState);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void preloadGameAssets(({ loaded, total }) => {
+      if (isMounted) {
+        setLoadingProgress(total === 0 ? 100 : Math.round((loaded / total) * 100));
+      }
+    }).finally(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const startGame = () => {
     setGameState((state) => ({ ...state, screen: "map" }));
@@ -145,5 +167,9 @@ export function App() {
     );
   };
 
-  return <DesktopGuard>{renderScreen()}</DesktopGuard>;
+  return (
+    <DesktopGuard>
+      {isLoading ? <GameLoader progress={loadingProgress} /> : renderScreen()}
+    </DesktopGuard>
+  );
 }
