@@ -196,31 +196,13 @@ h1 {
 
 .field-flower {
   position: absolute;
-  filter: drop-shadow(0 3px 0 rgb(72 101 41 / 24%));
-  font-size: clamp(1.6rem, 2.8vw, 2.8rem);
-  rotate: var(--flower-rotation, 0deg);
+  width: clamp(2.8rem, 4.3vw, 4.3rem);
+  height: auto;
+  filter: drop-shadow(0 4px 2px rgb(72 101 41 / 22%));
+  image-rendering: pixelated;
+  transform-origin: 50% 100%;
+  user-select: none;
 }
-
-.field-flower--1 { top: 8%; left: 5%; --flower-rotation: -12deg; }
-.field-flower--2 { top: 18%; left: 13%; --flower-rotation: 8deg; }
-.field-flower--3 { top: 31%; left: 4%; --flower-rotation: -5deg; }
-.field-flower--4 { top: 51%; left: 9%; --flower-rotation: 11deg; }
-.field-flower--5 { top: 68%; left: 3%; --flower-rotation: -8deg; }
-.field-flower--6 { top: 82%; left: 15%; --flower-rotation: 5deg; }
-.field-flower--7 { top: 10%; left: 27%; --flower-rotation: 9deg; }
-.field-flower--8 { top: 69%; left: 26%; --flower-rotation: -12deg; }
-.field-flower--9 { top: 86%; left: 34%; --flower-rotation: 7deg; }
-.field-flower--10 { top: 7%; left: 40%; --flower-rotation: -4deg; }
-.field-flower--11 { top: 8%; right: 39%; --flower-rotation: 6deg; }
-.field-flower--12 { top: 86%; right: 34%; --flower-rotation: -9deg; }
-.field-flower--13 { top: 68%; right: 26%; --flower-rotation: 12deg; }
-.field-flower--14 { top: 11%; right: 27%; --flower-rotation: -6deg; }
-.field-flower--15 { top: 82%; right: 15%; --flower-rotation: 10deg; }
-.field-flower--16 { top: 67%; right: 4%; --flower-rotation: -7deg; }
-.field-flower--17 { top: 50%; right: 10%; --flower-rotation: 6deg; }
-.field-flower--18 { top: 31%; right: 4%; --flower-rotation: 9deg; }
-.field-flower--19 { top: 18%; right: 13%; --flower-rotation: -11deg; }
-.field-flower--20 { top: 7%; right: 5%; --flower-rotation: 4deg; }
 
 .map-scene {
   position: relative;
@@ -539,10 +521,12 @@ h1 {
 .puppy-station {
   position: absolute;
   z-index: 4;
+  width: clamp(11rem, 15vw, 15rem);
+  height: auto;
   filter: drop-shadow(0 7px 0 rgb(56 45 34 / 24%));
-  font-size: clamp(4.2rem, 6vw, 6.4rem);
-  line-height: 1;
+  image-rendering: pixelated;
   translate: -50% -50%;
+  user-select: none;
 }
 
 .puppy-station--upper-left { top: 9%; left: 6%; rotate: 9deg; }
@@ -675,6 +659,26 @@ h1 {
   line-height: 1;
 }
 
+.puppy-overlay__visual {
+  display: flex;
+  min-height: 112px;
+  margin-bottom: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.puppy-overlay__visual img {
+  width: 136px;
+  height: 136px;
+  margin: -12px -20px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  user-select: none;
+}
+
 .puppy-overlay h2 {
   margin: 0;
   font-size: clamp(2rem, 4vw, 3.4rem);
@@ -795,12 +799,14 @@ h1 {
 .lavash-cursor {
   position: absolute;
   z-index: 5;
+  width: clamp(8rem, 11vw, 11rem);
+  height: auto;
   filter: drop-shadow(0 7px 0 rgb(56 45 34 / 32%));
-  font-size: clamp(4.8rem, 7.2vw, 7.2rem);
-  line-height: 1;
+  image-rendering: pixelated;
   pointer-events: none;
   rotate: -12deg;
-  translate: -50% -50%;
+  translate: -25% -16%;
+  transform-origin: 25% 16%;
   user-select: none;
 }
 
@@ -859,6 +865,26 @@ h1 {
   margin-bottom: 14px;
   font-size: 3.4rem;
   line-height: 1;
+}
+
+.armenia-overlay__food {
+  display: flex;
+  min-height: 104px;
+  margin-bottom: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  font-size: 3.2rem;
+  line-height: 1;
+}
+
+.armenia-overlay__food img {
+  width: 112px;
+  height: 112px;
+  margin: -10px -12px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  user-select: none;
 }
 
 .armenia-overlay h2 {
@@ -1542,12 +1568,22 @@ h1 {
   width: 92px;
   height: 92px;
   margin: 27px auto 24px;
+  overflow: hidden;
   border: 3px solid #a25947;
   border-radius: 50%;
   place-items: center;
   background: #f3d784;
   box-shadow: 0 0 0 7px #fff9e9, 0 0 0 9px #a25947;
   font-size: 3.8rem;
+}
+
+.certificate__seal-image {
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  translate: -12px -14px;
+  user-select: none;
 }
 
 .certificate h1 {

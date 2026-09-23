@@ -1,3 +1,4 @@
+import poodle1 from "../../assets/poodle-1.png";
 import { gameAssets } from "../assets/gameAssets";
 import type { Gift } from "../types/game";
 
@@ -44,7 +45,7 @@ const certificateCopy: Record<Gift, CertificateCopy> = {
 const certificateVisuals: Record<Gift, CertificateVisuals> = {
   puppy: {
     corner: gameAssets.paw,
-    seal: gameAssets.puppy,
+    seal: "",
     divider: gameAssets.paw,
   },
   armenia: {
@@ -86,7 +87,16 @@ export function CertificateScreen({
 
           <p className="certificate__heading">{copy.heading}</p>
           <span className="certificate__seal" aria-hidden="true">
-            {visuals.seal}
+            {gift === "puppy" ? (
+              <img
+                className="certificate__seal-image"
+                src={poodle1}
+                alt=""
+                draggable={false}
+              />
+            ) : (
+              visuals.seal
+            )}
           </span>
           <h1 id="certificate-title">{copy.title}</h1>
           <p className="certificate__body">{copy.body}</p>

@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
+import poodle1 from "../../assets/poodle-1.png";
+import poodle2 from "../../assets/poodle-2.png";
+import poodle3 from "../../assets/poodle-3.png";
+import poodle4 from "../../assets/poodle-4.png";
 import { gameAssets } from "../assets/gameAssets";
+import {
+  playPuppySound,
+  startPuppyMusic,
+  stopPuppyAudio,
+  stopPuppyMusic,
+} from "../audio/audio";
 
 type GamePhase = "ready" | "playing" | "lost" | "won";
 type HorizontalSide = "left" | "right";
@@ -37,6 +47,13 @@ const LANES: Lane[] = [
   "upper-right",
   "lower-right",
 ];
+
+const puppySprites: Record<Lane, string> = {
+  "upper-left": poodle1,
+  "lower-left": poodle2,
+  "upper-right": poodle3,
+  "lower-right": poodle4,
+};
 
 const lanePoints: Record<Lane, { start: Point; end: Point }> = {
   "upper-left": { start: { x: 8, y: 12 }, end: { x: 45, y: 45 } },
@@ -146,18 +163,25 @@ export function PuppyGameScreen({
       setAttemptResult("caught");
 
       if (nextScore === TARGET_SCORE) {
+        stopPuppyMusic();
+        playPuppySound("win");
         phaseRef.current = "won";
         setPhase("won");
         onWin();
         return;
       }
+
+      playPuppySound("catch");
     } else {
       const nextLives = livesRef.current - 1;
       livesRef.current = nextLives;
       setLives(nextLives);
       setAttemptResult("missed");
+      playPuppySound("miss");
 
       if (nextLives === 0) {
+        stopPuppyMusic();
+        playPuppySound("lose");
         phaseRef.current = "lost";
         setPhase("lost");
         return;
@@ -177,6 +201,7 @@ export function PuppyGameScreen({
     projectileIdRef.current = id;
     setAttemptResult(null);
     setProjectile({ id, lane, progress: 0 });
+    playPuppySound("spawn");
 
     const animate = (timestamp: number) => {
       if (phaseRef.current !== "playing") {
@@ -205,6 +230,8 @@ export function PuppyGameScreen({
 
   const startRound = () => {
     cancelScheduledWork();
+    stopPuppyAudio();
+    startPuppyMusic();
     phaseRef.current = "playing";
     scoreRef.current = 0;
     livesRef.current = STARTING_LIVES;
@@ -223,7 +250,13 @@ export function PuppyGameScreen({
     scheduleNextAttempt(FIRST_ATTEMPT_DELAY);
   };
 
-  useEffect(() => cancelScheduledWork, []);
+  useEffect(
+    () => () => {
+      cancelScheduledWork();
+      stopPuppyAudio();
+    },
+    [],
+  );
 
   useEffect(() => {
     if (phase !== "playing") {
@@ -354,13 +387,14 @@ export function PuppyGameScreen({
           </svg>
 
           {LANES.map((lane) => (
-            <span
+            <img
               className={`puppy-station puppy-station--${lane}`}
               key={lane}
+              src={puppySprites[lane]}
+              alt=""
+              draggable={false}
               aria-hidden="true"
-            >
-              {gameAssets.puppy}
-            </span>
+            />
           ))}
 
           <span
@@ -406,9 +440,10 @@ export function PuppyGameScreen({
           {phase === "ready" ? (
             <div className="puppy-overlay">
               <div className="puppy-overlay__card">
-                <span className="puppy-overlay__emoji" aria-hidden="true">
-                  {gameAssets.puppy} {gameAssets.poop} {gameAssets.basket}
-                </span>
+                <div className="puppy-overlay__visual" aria-hidden="true">
+                  <img src={poodle1} alt="" draggable={false} />
+                  <span>{gameAssets.poop} {gameAssets.basket}</span>
+                </div>
                 <p className="eyebrow">Срочная операция</p>
                 <h2>Поймай 10. Не пропусти 3.</h2>
                 <p>
@@ -452,9 +487,11 @@ export function PuppyGameScreen({
           {phase === "won" ? (
             <div className="puppy-overlay">
               <div className="puppy-overlay__card puppy-overlay__card--won">
-                <span className="puppy-overlay__emoji" aria-hidden="true">
-                  {gameAssets.paw} {gameAssets.puppy} {gameAssets.paw}
-                </span>
+                <div className="puppy-overlay__visual" aria-hidden="true">
+                  <span>{gameAssets.paw}</span>
+                  <img src={poodle1} alt="" draggable={false} />
+                  <span>{gameAssets.paw}</span>
+                </div>
                 <p className="eyebrow">10 из 10</p>
                 <h2>Щенячья катастрофа предотвращена.</h2>
                 <button className="primary-button" type="button" onClick={onClaim}>

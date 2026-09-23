@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { gameAssets } from "../assets/gameAssets";
+import { playGachaSound } from "../audio/audio";
 
 type GamePhase = "ready" | "regular" | "special" | "won";
 type RollStage = "idle" | "shaking" | "capsule" | "reveal" | "plane-flight";
@@ -123,6 +124,7 @@ export function JapanGameScreen({
           specialBagRef.current = createSpecialBag();
           setSpecialRolls(0);
           setPhase("special");
+          playGachaSound("special");
         }
 
         setStage("idle");
@@ -160,6 +162,7 @@ export function JapanGameScreen({
       return;
     }
 
+    playGachaSound("button");
     setCurrentPrize(null);
     setStage("shaking");
 
@@ -170,12 +173,14 @@ export function JapanGameScreen({
         setCurrentPrize(prize);
 
         if (prize === gameAssets.japanPlane) {
+          playGachaSound("jackpot");
           setSpecialRolls((count) => count + 1);
           setStage("plane-flight");
           schedule(finishGame, PLANE_FLIGHT_DURATION);
           return;
         }
 
+        playGachaSound("prize");
         finishCollectibleRoll(prize, rollPhase);
       }, CAPSULE_DURATION);
     }, SHAKE_DURATION);

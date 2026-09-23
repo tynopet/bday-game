@@ -7,7 +7,21 @@ import {
 } from "react";
 
 import armeniaBackground from "../../assets/armenia_bg.jpg";
+import basturmaSprite from "../../assets/basturma.png";
+import chickenShashlikSprite from "../../assets/chicken_shashlik.png";
+import dolmaSprite from "../../assets/dolma.png";
+import donerPitaSprite from "../../assets/doner_pita.png";
+import gataSprite from "../../assets/gata.png";
+import jingalovHatsSprite from "../../assets/jingalov_hats.png";
+import khorovatsSprite from "../../assets/khorovats.png";
+import lahmajounSprite from "../../assets/lahmajoun.png";
+import lambShashlikSprite from "../../assets/lamb_shashlik.png";
+import lavashSprite from "../../assets/lavash.png";
+import lulaKebabSprite from "../../assets/lula_kebab.png";
+import shawarmaWrapSprite from "../../assets/shawarma_wrap.png";
+import vegetableSkewerSprite from "../../assets/vegetable_skewer.png";
 import { gameAssets } from "../assets/gameAssets";
+import { startArmeniaMusic, stopArmeniaMusic } from "../audio/audio";
 
 type GamePhase = "ready" | "playing" | "won";
 
@@ -37,42 +51,66 @@ interface FoodPosition {
   y: number;
   scale: number;
   rotation: number;
-  symbol: (typeof gameAssets.armeniaFoods)[number];
+  spriteIndex: number;
 }
 
 const TARGET_PROGRESS = 75;
 const PROGRESS_CANVAS_WIDTH = 180;
 const PROGRESS_CHECK_INTERVAL = 200;
+const BRUSH_RADIUS = 12;
+const FOOD_COUNT = 900;
+
+const foodSpriteSources = [
+  basturmaSprite,
+  chickenShashlikSprite,
+  dolmaSprite,
+  donerPitaSprite,
+  gataSprite,
+  jingalovHatsSprite,
+  khorovatsSprite,
+  lahmajounSprite,
+  lambShashlikSprite,
+  lulaKebabSprite,
+  shawarmaWrapSprite,
+  vegetableSkewerSprite,
+] as const;
+
+function seededUnit(index: number, seed: number): number {
+  let value =
+    Math.imul(index + 1, 0x9e3779b1) ^
+    Math.imul(seed + 1, 0x85ebca6b);
+
+  value ^= value >>> 16;
+  value = Math.imul(value, 0x7feb352d);
+  value ^= value >>> 15;
+
+  return (value >>> 0) / 0x100000000;
+}
 
 const foodPositions: FoodPosition[] = Array.from(
-  { length: 54 },
-  (_, index) => {
-    const column = index % 9;
-    const row = Math.floor(index / 9);
-
-    return {
-      x: (column + 0.5 + (row % 2 === 0 ? 0 : 0.22)) / 9,
-      y: (row + 0.5) / 6,
-      scale: 0.86 + ((index * 7) % 5) * 0.07,
-      rotation: (((index * 29) % 34) - 17) * (Math.PI / 180),
-      symbol:
-        gameAssets.armeniaFoods[index % gameAssets.armeniaFoods.length],
-    };
-  },
+  { length: FOOD_COUNT },
+  (_, index) => ({
+    x: seededUnit(index, 1) * 1.1 - 0.05,
+    y: seededUnit(index, 2) * 1.1 - 0.05,
+    scale: 0.72 + seededUnit(index, 3) * 0.63,
+    rotation: (seededUnit(index, 4) - 0.5) * Math.PI * 2,
+    spriteIndex: index % foodSpriteSources.length,
+  }),
 );
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function getBrushSize(width: number, height: number): number {
-  return clamp(Math.min(width, height) * 0.19, 92, 142);
+function getBrushSize(): number {
+  return BRUSH_RADIUS * 2;
 }
 
 function drawFoodCover(
   context: CanvasRenderingContext2D,
   width: number,
   height: number,
+  foodImages: HTMLImageElement[],
 ) {
   context.save();
   context.globalCompositeOperation = "source-over";
@@ -92,20 +130,25 @@ function drawFoodCover(
     }
   }
 
-  const baseFoodSize = clamp(Math.min(width / 13, height / 5.6), 58, 104);
-  context.fillStyle = "#fff";
-  context.textAlign = "center";
-  context.textBaseline = "middle";
+  const baseFoodSize = clamp(Math.min(width / 10.5, height / 6.5), 82, 122);
+  context.imageSmoothingEnabled = false;
 
   foodPositions.forEach((food) => {
+    const image = foodImages[food.spriteIndex];
+
+    if (!image?.complete || image.naturalWidth === 0) {
+      return;
+    }
+
+    const size = baseFoodSize * food.scale;
+
     context.save();
     context.translate(food.x * width, food.y * height);
     context.rotate(food.rotation);
-    context.font = `${baseFoodSize * food.scale}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
     context.shadowColor = "rgba(57, 31, 20, 0.32)";
     context.shadowBlur = 0;
     context.shadowOffsetY = 6;
-    context.fillText(food.symbol, 0, 0);
+    context.drawImage(image, -size / 2, -size / 2, size, size);
     context.restore();
   });
 
@@ -207,6 +250,7 @@ export function ArmeniaGameScreen({
   const hasWonRef = useRef(false);
   const progressTimerRef = useRef<number | null>(null);
   const lastProgressCheckRef = useRef(0);
+  const foodImagesRef = useRef<HTMLImageElement[]>([]);
 
   const repaintCanvases = useCallback(() => {
     const arena = arenaRef.current;
@@ -234,8 +278,8 @@ export function ArmeniaGameScreen({
     if (phaseRef.current === "won") {
       context.clearRect(0, 0, width, height);
     } else {
-      drawFoodCover(context, width, height);
-      const brushSize = getBrushSize(width, height);
+      drawFoodCover(context, width, height, foodImagesRef.current);
+      const brushSize = getBrushSize();
 
       strokesRef.current.forEach((stroke) => {
         eraseStroke(context, stroke, width, height, brushSize);
@@ -274,7 +318,7 @@ export function ArmeniaGameScreen({
     progressContext.fillRect(0, 0, PROGRESS_CANVAS_WIDTH, progressHeight);
 
     const progressBrushSize =
-      getBrushSize(width, height) * (PROGRESS_CANVAS_WIDTH / width);
+      getBrushSize() * (PROGRESS_CANVAS_WIDTH / width);
 
     strokesRef.current.forEach((stroke) => {
       eraseStroke(
@@ -286,6 +330,36 @@ export function ArmeniaGameScreen({
       );
     });
   }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let pendingImages = foodSpriteSources.length;
+    const images = foodSpriteSources.map((source) => {
+      const image = new Image();
+
+      const handleSettled = () => {
+        pendingImages -= 1;
+
+        if (!disposed && pendingImages === 0) {
+          repaintCanvases();
+        }
+      };
+      image.onload = handleSettled;
+      image.onerror = handleSettled;
+      image.src = source;
+      return image;
+    });
+
+    foodImagesRef.current = images;
+
+    return () => {
+      disposed = true;
+      images.forEach((image) => {
+        image.onload = null;
+        image.onerror = null;
+      });
+    };
+  }, [repaintCanvases]);
 
   const calculateProgress = useCallback(() => {
     if (phaseRef.current !== "playing") {
@@ -322,6 +396,7 @@ export function ArmeniaGameScreen({
       hasWonRef.current = true;
       phaseRef.current = "won";
       isDraggingRef.current = false;
+      stopArmeniaMusic();
       setIsDragging(false);
       setLavashPosition(null);
       setPhase("won");
@@ -380,11 +455,14 @@ export function ArmeniaGameScreen({
       if (progressTimerRef.current !== null) {
         window.clearTimeout(progressTimerRef.current);
       }
+      stopArmeniaMusic();
     },
     [],
   );
 
   const startRound = () => {
+    stopArmeniaMusic();
+    startArmeniaMusic();
     strokesRef.current = [];
     currentStrokeRef.current = null;
     progressRef.current = 0;
@@ -424,14 +502,14 @@ export function ArmeniaGameScreen({
       return;
     }
 
-    eraseSegment(context, from, to, width, height, getBrushSize(width, height));
+    eraseSegment(context, from, to, width, height, getBrushSize());
     eraseSegment(
       progressContext,
       from,
       to,
       progressCanvas.width,
       progressCanvas.height,
-      getBrushSize(width, height) * (progressCanvas.width / width),
+      getBrushSize() * (progressCanvas.width / width),
     );
   };
 
@@ -460,20 +538,31 @@ export function ArmeniaGameScreen({
   const handlePointerMove = (
     event: ReactPointerEvent<HTMLCanvasElement>,
   ) => {
+    if (phaseRef.current !== "playing") {
+      return;
+    }
+
+    const point = getPointerPosition(event);
     const stroke = currentStrokeRef.current;
 
-    if (!isDraggingRef.current || !stroke || phaseRef.current !== "playing") {
+    setLavashPosition(point);
+
+    if (!isDraggingRef.current || !stroke) {
       return;
     }
 
     event.preventDefault();
-    const point = getPointerPosition(event);
     const previousPoint = stroke.points[stroke.points.length - 1];
 
     stroke.points.push(point);
-    setLavashPosition(point);
     eraseLatestSegment(previousPoint, point);
     scheduleProgressCheck();
+  };
+
+  const handlePointerLeave = () => {
+    if (!isDraggingRef.current) {
+      setLavashPosition(null);
+    }
   };
 
   const finishPointerStroke = (
@@ -490,7 +579,16 @@ export function ArmeniaGameScreen({
     currentStrokeRef.current = null;
     isDraggingRef.current = false;
     setIsDragging(false);
-    setLavashPosition(null);
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const isPointerInside =
+      event.type !== "pointercancel" &&
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom;
+
+    setLavashPosition(isPointerInside ? getPointerPosition(event) : null);
     scheduleProgressCheck(true);
   };
 
@@ -525,23 +623,26 @@ export function ArmeniaGameScreen({
             ref={canvasRef}
             aria-label="Слой армянского застолья. Зажмите мышь и стирайте его лавашом."
             onPointerDown={handlePointerDown}
+            onPointerEnter={handlePointerMove}
             onPointerMove={handlePointerMove}
+            onPointerLeave={handlePointerLeave}
             onPointerUp={finishPointerStroke}
             onPointerCancel={finishPointerStroke}
             onContextMenu={(event) => event.preventDefault()}
           />
 
           {lavashPosition && phase === "playing" ? (
-            <span
+            <img
               className="lavash-cursor"
+              src={lavashSprite}
+              alt=""
+              draggable={false}
               style={{
                 left: `${lavashPosition.x * 100}%`,
                 top: `${lavashPosition.y * 100}%`,
               }}
               aria-hidden="true"
-            >
-              {gameAssets.lavash}
-            </span>
+            />
           ) : null}
 
           {phase === "playing" ? (
@@ -553,9 +654,11 @@ export function ArmeniaGameScreen({
           {phase === "ready" ? (
             <div className="armenia-overlay">
               <div className="armenia-overlay__card">
-                <span className="armenia-overlay__emoji" aria-hidden="true">
-                  {gameAssets.lavash} 🥩 🍅
-                </span>
+                <div className="armenia-overlay__food" aria-hidden="true">
+                  <img src={lavashSprite} alt="" draggable={false} />
+                  <img src={basturmaSprite} alt="" draggable={false} />
+                  <img src={khorovatsSprite} alt="" draggable={false} />
+                </div>
                 <p className="eyebrow">После большого застолья</p>
                 <h2>Пора прибраться после застолья.</h2>
                 <p>
@@ -582,9 +685,10 @@ export function ArmeniaGameScreen({
           {phase === "won" ? (
             <div className="armenia-overlay armenia-overlay--won">
               <div className="armenia-overlay__card armenia-overlay__card--won">
-                <span className="armenia-overlay__emoji" aria-hidden="true">
-                  {gameAssets.armeniaFlag} {gameAssets.lavash}
-                </span>
+                <div className="armenia-overlay__food" aria-hidden="true">
+                  <span>{gameAssets.armeniaFlag}</span>
+                  <img src={lavashSprite} alt="" draggable={false} />
+                </div>
                 <p className="eyebrow">Найдено</p>
                 <h2>Кажется, под шашлыком была Армения.</h2>
                 <button
