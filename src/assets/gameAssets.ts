@@ -1,0 +1,16 @@
+export const gameAssets = {
+  gift: "🎁",
+  flower: "🌼",
+  completedMark: "✓",
+  puppy: "🐶",
+  poop: "💩",
+  basket: "🧺",
+  paw: "🐾",
+  lavash: "🫓",
+  armeniaFlag: "🇦🇲",
+  armeniaFoods: ["🥩", "🍖", "🍅", "🧅", "🌿"] as const,
+  japanCollectibles: ["🌸", "🍣", "🍙", "🗻", "🍜", "🚅", "🐱", "🏮", "🐟"] as const,
+  japanPlane: "✈️",
+  japanCapsule: "🔴",
+  japanSparkle: "✨",
+} as const;
